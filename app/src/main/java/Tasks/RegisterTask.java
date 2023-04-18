@@ -10,6 +10,7 @@ import com.example.family_map_client.ServerProxy;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import Fragments.LoginFragment;
 import Request.RegisterRequest;
 import Result.PersonsResult;
 import Result.RegisterResult;
@@ -41,7 +42,6 @@ public class RegisterTask implements Runnable{
         this.serverPortNumber = serverPortNumber;
     }
 
-
     @Override
     public void run() {
         try {
@@ -66,14 +66,15 @@ public class RegisterTask implements Runnable{
 
     private void sendMessage() {
         Message message = Message.obtain();
-
         Bundle messageBundle = new Bundle();
+
         if (isSuccess) {
             messageBundle.putString(FIRST_NAME, firstName);
             messageBundle.putString(LAST_NAME, lastName);
         }
         messageBundle.putBoolean(SUCCESS_KEY, isSuccess);
 
+        messageBundle.putSerializable("taskType", LoginFragment.TaskType.REGISTER);
         message.setData(messageBundle);
         messageHandler.sendMessage(message);
     }

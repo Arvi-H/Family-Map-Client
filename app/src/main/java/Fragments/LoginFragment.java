@@ -62,6 +62,10 @@ public class LoginFragment extends Fragment {
         void notifyDone();
     }
 
+    public enum TaskType {
+        LOGIN, REGISTER
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -152,11 +156,16 @@ public class LoginFragment extends Fragment {
         @Override
         public void handleMessage(Message message) {
             Bundle bundle = message.getData();
+            String resultMsg = bundle.getBoolean(SUCCESS_KEY) ? "Successful" : "Failed";
+            String firstName = bundle.getString(FIRST_NAME);
+            String lastName = bundle.getString(LAST_NAME);
 
-            if (bundle.getBoolean(SUCCESS_KEY)) {
-                Toast.makeText(view.getContext(), bundle.getString(FIRST_NAME) + " " + bundle.getString(LAST_NAME), Toast.LENGTH_SHORT).show();
+            String taskName = bundle.getSerializable("taskType") == TaskType.LOGIN ? "Login" : "Registration";
+
+            if (resultMsg.equals("Successful")) {
+                Toast.makeText(view.getContext(), taskName + " " + resultMsg + " for " + firstName + " " + lastName, Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(view.getContext(), "Register Failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(view.getContext(), taskName + " " + resultMsg, Toast.LENGTH_SHORT).show();
             }
         }
     };

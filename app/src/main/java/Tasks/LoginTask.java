@@ -11,6 +11,7 @@ import com.example.family_map_client.ServerProxy;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import Fragments.LoginFragment;
 import Request.LoginRequest;
 import Result.LoginResult;
 import Result.PersonsResult;
@@ -76,6 +77,7 @@ public class LoginTask implements Runnable {
         }
         messageBundle.putBoolean(SUCCESS_KEY, isSuccess);
 
+        messageBundle.putSerializable("taskType", LoginFragment.TaskType.LOGIN);
         message.setData(messageBundle);
         messageHandler.sendMessage(message);
     }

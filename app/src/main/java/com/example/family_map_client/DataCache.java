@@ -32,7 +32,6 @@ public class DataCache {
         }
     }
 
-
     public Person getUser() {
         return user;
     }
