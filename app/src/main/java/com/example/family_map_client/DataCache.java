@@ -13,7 +13,7 @@ public class DataCache {
     private Map<String, Person> people;
     private Map<String, Event> events;
     private Person user;
-
+    private Event event;
     private DataCache() {}
 
     public static DataCache getInstance() {
@@ -34,7 +34,7 @@ public class DataCache {
             user = people.get(personID);
 
             for (Event value : eventsResult.getData()){
-                Event event = new Event(value.getEventID(), value.getAssociatedUsername(), value.getPersonID(), value.getLatitude(), value.getLongitude(), value.getCountry(), value.getCity(), value.getEventType(), value.getYear());
+                event = new Event(value.getEventID(), value.getAssociatedUsername(), value.getPersonID(), value.getLatitude(), value.getLongitude(), value.getCountry(), value.getCity(), value.getEventType(), value.getYear());
                 events.put(event.getEventID(), event);
             }
         }
@@ -42,5 +42,9 @@ public class DataCache {
 
     public Person getUser() {
         return user;
+    }
+
+    public Map<String, Event> getEvents() {
+        return events;
     }
 }

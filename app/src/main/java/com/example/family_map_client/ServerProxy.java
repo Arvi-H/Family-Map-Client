@@ -122,7 +122,7 @@ public class ServerProxy {
             EventsResult eventsResult;
 
             // HTTP Connection
-            URL url = new URL("http://" + serverHost + ":" + serverPortNumber + "/person");
+            URL url = new URL("http://" + serverHost + ":" + serverPortNumber + "/event");
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestMethod("GET");
             http.setDoOutput(false); // No Request Body
