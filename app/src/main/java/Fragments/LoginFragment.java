@@ -156,16 +156,19 @@ public class LoginFragment extends Fragment {
         @Override
         public void handleMessage(Message message) {
             Bundle bundle = message.getData();
-            String resultMsg = bundle.getBoolean(SUCCESS_KEY) ? "Successful" : "Failed";
+            boolean success = bundle.getBoolean(SUCCESS_KEY);
             String firstName = bundle.getString(FIRST_NAME);
             String lastName = bundle.getString(LAST_NAME);
 
             String taskName = bundle.getSerializable("taskType") == TaskType.LOGIN ? "Login" : "Registration";
 
-            if (resultMsg.equals("Successful")) {
-                Toast.makeText(view.getContext(), taskName + " " + resultMsg + " for " + firstName + " " + lastName, Toast.LENGTH_SHORT).show();
+            if (success) {
+                Toast.makeText(view.getContext(), taskName + " Successful for " + firstName + " " + lastName, Toast.LENGTH_SHORT).show();
+                if (taskName.equals("Login")) {
+                    listener.notifyDone(); // Switch to MapFragment
+                }
             } else {
-                Toast.makeText(view.getContext(), taskName + " " + resultMsg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(view.getContext(), taskName + " Failed", Toast.LENGTH_SHORT).show();
             }
         }
     };

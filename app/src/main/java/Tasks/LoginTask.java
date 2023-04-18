@@ -8,11 +8,13 @@ import android.os.Message;
 import com.example.family_map_client.DataCache;
 import com.example.family_map_client.ServerProxy;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import Fragments.LoginFragment;
 import Request.LoginRequest;
+import Result.EventsResult;
 import Result.LoginResult;
 import Result.PersonsResult;
 
@@ -53,8 +55,9 @@ public class LoginTask implements Runnable {
 
             if (loginResult.isSuccess()) {
                 PersonsResult personsResult = serverProxy.getPersons(loginResult.getAuthtoken(), serverHost, serverPortNumber);
+                EventsResult eventsResult = serverProxy.getEvents(loginResult.getAuthtoken(), serverHost, serverPortNumber);
 
-                dataCache.setData(loginResult.getPersonID(), personsResult);
+                dataCache.setData(loginResult.getPersonID(), personsResult, eventsResult);
                 firstName = dataCache.getUser().getFirstName();
                 lastName = dataCache.getUser().getLastName();
 
@@ -62,7 +65,7 @@ public class LoginTask implements Runnable {
             }
 
             sendMessage();
-        } catch (MalformedURLException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

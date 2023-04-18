@@ -5,11 +5,13 @@ import java.util.Map;
 
 import Model.Event;
 import Model.Person;
+import Result.EventsResult;
 import Result.PersonsResult;
 
 public class DataCache {
     private static DataCache instance;
     private Map<String, Person> people;
+    private Map<String, Event> events;
     private Person user;
 
     private DataCache() {}
@@ -19,9 +21,10 @@ public class DataCache {
         return instance;
     }
 
-    public void setData(String personID, PersonsResult personsResult) {
-        if (personID != null && personsResult != null) {
+    public void setData(String personID, PersonsResult personsResult, EventsResult eventsResult) {
+        if (personID != null && personsResult != null && eventsResult != null) {
             people = new HashMap<>();
+            events = new HashMap<>();
 
             for (Person value : personsResult.getData()) {
                 user = new Person(value.getPersonID(), value.getAssociatedUsername(), value.getFirstName(), value.getLastName(), value.getGender(), value.getFatherID(), value.getMotherID(), value.getSpouseID());
@@ -29,6 +32,11 @@ public class DataCache {
             }
 
             user = people.get(personID);
+
+            for (Event value : eventsResult.getData()){
+                Event event = new Event(value.getEventID(), value.getAssociatedUsername(), value.getPersonID(), value.getLatitude(), value.getLongitude(), value.getCountry(), value.getCity(), value.getEventType(), value.getYear());
+                events.put(event.getEventID(), event);
+            }
         }
     }
 

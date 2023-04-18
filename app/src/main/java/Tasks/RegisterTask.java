@@ -7,17 +7,19 @@ import android.os.Message;
 import com.example.family_map_client.DataCache;
 import com.example.family_map_client.ServerProxy;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import Fragments.LoginFragment;
 import Request.RegisterRequest;
+import Result.EventsResult;
 import Result.PersonsResult;
 import Result.RegisterResult;
 public class RegisterTask implements Runnable{
     private final Handler messageHandler;
     private final RegisterRequest registerRequest;
-    private final ServerProxy server;
+    private final ServerProxy serverProxy;
     private final String serverHost;
     private final String serverPortNumber;
     private final static String SUCCESS_KEY = "success";
@@ -31,7 +33,7 @@ public class RegisterTask implements Runnable{
 
     public RegisterTask(Handler messageHandler, RegisterRequest registerRequest, String serverHost, String serverPortNumber) {
         // Initialize
-        server = new ServerProxy();
+        serverProxy = new ServerProxy();
         dataCache = DataCache.getInstance();
 
         this.messageHandler = messageHandler;
@@ -46,12 +48,13 @@ public class RegisterTask implements Runnable{
     public void run() {
         try {
             URL url = new URL("http://" + serverHost + ":" + serverPortNumber + "/user/register");
-            RegisterResult response = server.register(registerRequest, url);
+            RegisterResult registerResult = serverProxy.register(registerRequest, url);
 
-            if (response.isSuccess()) {
-                PersonsResult personsResult = server.getPersons(response.getAuth_token(), serverHost, serverPortNumber);
+            if (registerResult.isSuccess()) {
+                PersonsResult personsResult = serverProxy.getPersons(registerResult.getAuth_token(), serverHost, serverPortNumber);
+                EventsResult eventsResult = serverProxy.getEvents(registerResult.getAuth_token(), serverHost, serverPortNumber);
 
-                dataCache.setData(response.getPersonID(), personsResult);
+                dataCache.setData(registerResult.getPersonID(), personsResult, eventsResult);
                 firstName = dataCache.getUser().getFirstName();
                 lastName = dataCache.getUser().getLastName();
 
@@ -59,7 +62,7 @@ public class RegisterTask implements Runnable{
             }
 
             sendMessage();
-        } catch (MalformedURLException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

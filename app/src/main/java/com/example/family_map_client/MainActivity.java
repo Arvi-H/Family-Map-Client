@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.os.Bundle;
 
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.SupportMapFragment;
 
 import Fragments.LoginFragment;
 
@@ -24,12 +25,11 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Lis
 
     @Override
     public void notifyDone() {
-//        Fragment mapFragment = new MapFragment();
-//        FragmentManager fragmentManager = getSupportFragmentManager();
-//        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-//
-//        fragmentTransaction.replace(R.id.fragment_container, mapFragment);
-//        fragmentTransaction.addToBackStack(null);
-//
-//        fragmentTransaction.commit();
-    }}
+        SupportMapFragment mapFragment = new SupportMapFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, mapFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+}

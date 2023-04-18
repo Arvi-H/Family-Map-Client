@@ -8,10 +8,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import Request.LoginRequest;
 import Request.RegisterRequest;
+import Result.EventsResult;
 import Result.LoginResult;
 import Result.PersonsResult;
 import Result.RegisterResult;
@@ -112,6 +114,36 @@ public class ServerProxy {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
+    }
+
+    public EventsResult getEvents(String authToken, String serverHost, String serverPortNumber) throws IOException {
+        try {
+            EventsResult eventsResult;
+
+            // HTTP Connection
+            URL url = new URL("http://" + serverHost + ":" + serverPortNumber + "/person");
+            HttpURLConnection http = (HttpURLConnection)url.openConnection();
+            http.setRequestMethod("GET");
+            http.setDoOutput(false); // No Request Body
+            http.addRequestProperty("Authorization", authToken);
+            http.addRequestProperty("Accept", "application/json");
+            http.connect();
+
+            // Result Body
+            InputStream resultBody;
+            if (http.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                resultBody = http.getInputStream();
+            } else {
+                resultBody = http.getErrorStream();
+            }
+
+            eventsResult = gson.fromJson(readData(resultBody), EventsResult.class);
+            return eventsResult;
+
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
         return null;
     }
 
