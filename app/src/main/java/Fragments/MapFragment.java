@@ -2,6 +2,7 @@ package Fragments;
 
 import static com.google.android.gms.maps.CameraUpdateFactory.newLatLng;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -12,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.family_map_client.DataCache;
@@ -28,11 +30,15 @@ import com.example.family_map_client.R;
 import java.util.HashMap;
 import java.util.Map;
 import Model.Event;
+import Model.Person;
+
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
     private GoogleMap map;
     private Map<String, Event> events;
     private final DataCache dataCache = DataCache.getInstance();
-    private Map<Marker, Event> mapOfMarkers = new HashMap<>();
+    private final Map <Marker, Event> mapOfMarkers = new HashMap<>();
+
+//    private LinearLayout infoLayout;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,8 +54,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         assert mapFragment != null;
         mapFragment.getMapAsync(this);
 
+//        infoLayout = view.findViewById(R.id.info_layout);
+//        infoLayout.setOnClickListener(onClickInfoLayout);
+
         return view;
     }
+
+//    View.OnClickListener onClickInfoLayout = new View.OnClickListener() {
+//        @Override
+//        public void onClick(View v) {
+//            Intent intent = new Intent(getActivity(), PersonActivity.class);
+//            Person person = data.getPersonByID().get(mapOfMarkers.get(currMarker).getPersonID());
+//            data.setSelectPerson(person);
+//            startActivity(intent);
+//        }
+//    };
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -63,6 +82,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onMapLoaded() {
     }
+
+//    void clickMarker(Marker m) {
+//        name.setOnClickListener(null);
+//        event.setOnClickListener(null);
+//        year.setOnClickListener(null);
+//        icon.setOnClickListener(null);
+//    }
 
     private void addMarkers() {
         // Define a HashMap to store the event types and their corresponding colors

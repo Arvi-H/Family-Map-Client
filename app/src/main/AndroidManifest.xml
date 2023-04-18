@@ -17,6 +17,20 @@
         android:theme="@style/Theme.FamilyMapClient"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PersonActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EventActivity"
+            android:exported="false"
+            android:label="@string/title_activity_event"
+            android:theme="@style/Theme.FamilyMapClient.NoActionBar" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -27,14 +41,12 @@
             android:exported="true"
             android:label="Family Map"
             android:parentActivityName=".MainActivity">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-
     </application>
-</manifest>
 
+</manifest>
