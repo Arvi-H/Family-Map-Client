@@ -22,6 +22,9 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
         <activity
+            android:name="Activities.SearchActivity"
+            android:exported="false" />
+        <activity
             android:name="Activities.PersonActivity"
             android:parentActivityName="Activities.MainActivity"
             android:exported="false" />

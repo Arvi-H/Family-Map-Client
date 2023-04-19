@@ -123,6 +123,30 @@ public class DataCache {
     }
 
 
+    public ArrayList<Person> findPeopleWithText(String text) {
+        ArrayList<Person> peopleWithText = new ArrayList<>();
+        for (Person person : userPeople) {
+            if (person.getFirstName().toLowerCase().contains(text.toLowerCase()) ||
+                    person.getLastName().toLowerCase().contains(text.toLowerCase())) {
+                peopleWithText.add(person);
+            }
+        }
+        return peopleWithText;
+    }
+
+    public ArrayList<Event> findEventsWithText(String text) {
+        ArrayList<Event> eventsWithText = new ArrayList<>();
+        for (Event event : userEvents) {
+            if (event.getCountry().toLowerCase().contains(text.toLowerCase()) ||
+                    event.getCity().toLowerCase().contains(text.toLowerCase()) ||
+                    event.getEventType().toLowerCase().contains(text.toLowerCase()) ||
+                    String.valueOf(event.getYear()).contains(text.toLowerCase())) {
+                eventsWithText.add(event);
+            }
+        }
+        return eventsWithText;
+    }
+
     public Person getUser() {
         return user;
     }
