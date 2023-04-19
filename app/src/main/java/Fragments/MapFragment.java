@@ -10,6 +10,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -29,99 +32,174 @@ import com.example.family_map_client.R;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import Activities.PersonActivity;
+import Activities.SearchActivity;
+import Activities.SettingsActivity;
 import Model.Event;
 import Model.Person;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
     private GoogleMap map;
+    private SupportMapFragment mapFragment;
     private Map<String, Event> events;
-    private final DataCache dataCache = DataCache.getInstance();
-    private final Map <Marker, Event> mapOfMarkers = new HashMap<>();
+    private Map<String, Float> mapOfColors = new HashMap();
+    private Map<Marker, Event> mapOfMarkers = new HashMap<>();
+    private DataCache data = DataCache.getInstance();
+    private Float marker = 60f;
+    private Marker currMarker;
+    private TextView name;
+    private TextView event;
+    private TextView year;
+    private ImageView icon;
 
-//    private LinearLayout infoLayout;
+    String ifActivity = null;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View view = inflater.inflate(R.layout.map_fragment, container, false);
 
+        if (getArguments() != null){
+            ifActivity = getArguments().getString("EVENT_ID");
+        }
+        if (ifActivity == null){
+            setHasOptionsMenu(true);
+        }
+
+        name = view.findViewById(R.id.person_name);
+        event = view.findViewById(R.id.event_details);
+        year = view.findViewById(R.id.year);
+        icon = view.findViewById(R.id.map_icon);
+
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         assert mapFragment != null;
         mapFragment.getMapAsync(this);
 
-//        infoLayout = view.findViewById(R.id.info_layout);
-//        infoLayout.setOnClickListener(onClickInfoLayout);
-
         return view;
     }
-
-//    View.OnClickListener onClickInfoLayout = new View.OnClickListener() {
-//        @Override
-//        public void onClick(View v) {
-//            Intent intent = new Intent(getActivity(), PersonActivity.class);
-//            Person person = data.getPersonByID().get(mapOfMarkers.get(currMarker).getPersonID());
-//            data.setSelectPerson(person);
-//            startActivity(intent);
-//        }
-//    };
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         map = googleMap;
         map.setOnMapLoadedCallback(this);
-        events = dataCache.getEvents();
+        events = data.getEvents();
 
         addMarkers();
     }
 
+    View.OnClickListener onClickText = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(getActivity(), PersonActivity.class);
+            Person person = data.getPeople().get(mapOfMarkers.get(currMarker).getPersonID());
+            data.setSelectPerson(person);
+            intent.putExtra("PERSON_ID", person.getPersonID());
+            startActivity(intent);
+
+        }
+    };
+
     @Override
-    public void onMapLoaded() {
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
-//    void clickMarker(Marker m) {
-//        name.setOnClickListener(null);
-//        event.setOnClickListener(null);
-//        year.setOnClickListener(null);
-//        icon.setOnClickListener(null);
-//    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        Intent intent;
+        switch (item.getItemId()) {
+            case R.id.menu_item_search:
+                intent = new Intent(getActivity(), SearchActivity.class);
+                startActivity(intent);
+                return true;
+            case R.id.menu_item_settings:
+                intent = new Intent(getActivity(), SettingsActivity.class);
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
-    private void addMarkers() {
-        // Define a HashMap to store the event types and their corresponding colors
-        Map<String, Float> mapOfColors = new HashMap<>();
+    @Override
+    public void onMapLoaded() {}
 
-        // Predefine colors for known event types
-        mapOfColors.put("birth", BitmapDescriptorFactory.HUE_RED);
-        mapOfColors.put("death", BitmapDescriptorFactory.HUE_BLUE);
-        mapOfColors.put("marriage", BitmapDescriptorFactory.HUE_GREEN);
+    private void addMarkers(){
+        float color = 0.0f;
 
-        // Define the initial marker color value
-        float markerColorValue = 50.0f;
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker mar) {
+                clickMarker(mar);
+                return true;
+            }
+        });
 
-        // Loop through our events
-        for (Event currEvent : events.values()) {
-            String eventType = currEvent.getEventType().toLowerCase();
-            float color;
-
-            if (mapOfColors.containsKey(eventType)) {
-                color = mapOfColors.get(eventType);
-            } else {
-                color = markerColorValue;
-                mapOfColors.put(eventType, color);
-                markerColorValue += 50;
+        for (Event currEvent : events.values()){
+            if (currEvent.getEventType().toLowerCase().equals("birth")) {
+                color = BitmapDescriptorFactory.HUE_RED;
+            } else if (currEvent.getEventType().toLowerCase().equals("death")) {
+                color = BitmapDescriptorFactory.HUE_BLUE;
+            } else if (currEvent.getEventType().toLowerCase().equals("marriage")) {
+                color = BitmapDescriptorFactory.HUE_GREEN;
+            } else if (mapOfColors.containsKey(currEvent.getEventType().toLowerCase())){
+                color = mapOfColors.get(currEvent.getEventType().toLowerCase());
+            }
+            else {
+                mapOfColors.put(currEvent.getEventType().toLowerCase(), marker);
+                color = marker;
+                marker += 15;
             }
 
             LatLng newMark = new LatLng(currEvent.getLatitude(), currEvent.getLongitude());
-            Marker newM = map.addMarker(new MarkerOptions()
-                    .position(newMark)
-                    .icon(BitmapDescriptorFactory.defaultMarker(color))
-                    .title(currEvent.getEventType()));
+            Marker newM = map.addMarker(new MarkerOptions().position(newMark).icon(BitmapDescriptorFactory.defaultMarker(color)).title(currEvent.getEventType()));
             map.animateCamera(CameraUpdateFactory.newLatLng(newMark));
             mapOfMarkers.put(newM, currEvent);
+            if (data.getSelectEvent() != null) {
+                if (data.getSelectEvent().equals(currEvent)) {
+                    currMarker = newM;
+                }
+            }
         }
+
+        if (ifActivity != null){
+            map.moveCamera(CameraUpdateFactory.newLatLng(currMarker.getPosition()));
+            clickMarker(currMarker);
+        }
+    }
+
+    void clickMarker(Marker m) {
+        Event currE = mapOfMarkers.get(m);
+        Person currP = data.getPeople().get(currE.getPersonID());
+        String newName = currP.getFirstName() + " " + currP.getLastName();
+        String eventInfo = currE.getEventType() + ": " + currE.getCity() + ", " + currE.getCountry();
+        String yearInfo = "(" + currE.getYear() + ")";
+
+        name.setText(newName);
+        name.setVisibility(View.VISIBLE);
+        name.setOnClickListener(onClickText);
+
+        event.setText(eventInfo);
+        event.setVisibility(View.VISIBLE);
+        event.setOnClickListener(onClickText);
+
+        year.setText(yearInfo);
+        year.setVisibility(View.VISIBLE);
+        year.setOnClickListener(onClickText);
+
+        if (currP.getGender().toLowerCase().equals("m")){
+            icon.setImageDrawable(getResources().getDrawable(R.drawable.download));
+        } else {
+            icon.setImageDrawable(getResources().getDrawable(R.drawable.girl));
+        }
+
+        icon.setVisibility(View.VISIBLE);
+        icon.setOnClickListener(onClickText);
+
+        currMarker = m;
+        data.setSelectEvent(currE);
     }
 }

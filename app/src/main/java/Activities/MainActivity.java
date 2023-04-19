@@ -1,10 +1,12 @@
-package com.example.family_map_client;
+package Activities;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import android.os.Bundle;
+
+import com.example.family_map_client.R;
 
 import Fragments.MapFragment;
 import Fragments.LoginFragment;
@@ -16,9 +18,17 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Lis
         setContentView(R.layout.activity_main);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
-        LoginFragment loginFragment = new LoginFragment();
-        fragmentManager.beginTransaction().add(R.id.fragment_container, loginFragment).commit();
-        loginFragment.setListener(this);
+        Fragment currentFragment = fragmentManager.findFragmentById(R.id.fragment_container);
+
+        if (getIntent().getExtras() != null) {
+            notifyDone();
+        } else if (currentFragment == null) {
+            Fragment newFragment = new LoginFragment();
+            fragmentManager.beginTransaction()
+                    .add(R.id.fragment_container, newFragment)
+                    .commit();
+            ((LoginFragment) newFragment).setListener(this);
+        }
     }
 
     @Override
