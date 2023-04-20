@@ -98,10 +98,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
         public void onClick(View v) {
             Intent intent = new Intent(getActivity(), PersonActivity.class);
             Person person = data.getPeople().get(mapOfMarkers.get(currMarker).getPersonID());
-            data.setSelectPerson(person);
             intent.putExtra("PERSON_ID", person.getPersonID());
             startActivity(intent);
-
         }
     };
 
@@ -222,7 +220,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     private void lifeStoryLines(Event currE){
-        List<Event> lifeEvents = data.getEventsFromPeople().get(currE.getPersonID());
+        List<Event> lifeEvents = data.getPeopleEventsList().get(currE.getPersonID());
         Event currEvent = null;
         if (lifeEvents.size() > 1) {
             for (Event lifeEvent : lifeEvents) {
@@ -257,7 +255,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     private void addFatherLines(Person currPerson, Event currEvent, int generation){
-        List<Event> eventsList = data.getEventsFromPeople().get(currPerson.getFatherID());
+        List<Event> eventsList = data.getPeopleEventsList().get(currPerson.getFatherID());
 
         for (int i = 0; i < eventsList.size(); i++) {
             if (data.getEvents().containsValue(eventsList.get(i))) {
@@ -278,7 +276,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     }
 
     private void addMotherLines(Person currPerson, Event currEvent, int generation){
-        List<Event> eventsList = data.getEventsFromPeople().get(currPerson.getMotherID());
+        List<Event> eventsList = data.getPeopleEventsList().get(currPerson.getMotherID());
 
         for (int i = 0; i < eventsList.size(); i++) {
             if (data.getEvents().containsValue(eventsList.get(i))) {
@@ -300,7 +298,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
 
     private void spouseLines(Event currE){
         Person currPerson = data.getPeople().get(currE.getPersonID());
-        List<Event> eventsList = data.getEventsFromPeople().get(currPerson.getSpouseID());
+        List<Event> eventsList = data.getPeopleEventsList().get(currPerson.getSpouseID());
 
 //        Filter filter = model.getFilter();
 

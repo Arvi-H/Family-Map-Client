@@ -9,7 +9,6 @@ import com.example.family_map_client.DataCache;
 import com.example.family_map_client.ServerProxy;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import Fragments.LoginFragment;
@@ -57,7 +56,7 @@ public class LoginTask implements Runnable {
                 PersonsResult personsResult = serverProxy.getPersons(loginResult.getAuthtoken(), serverHost, serverPortNumber);
                 EventsResult eventsResult = serverProxy.getEvents(loginResult.getAuthtoken(), serverHost, serverPortNumber);
 
-                dataCache.setData(loginResult.getPersonID(), personsResult, eventsResult);
+                dataCache.initializeData(loginResult.getPersonID(), personsResult, eventsResult);
                 firstName = dataCache.getUser().getFirstName();
                 lastName = dataCache.getUser().getLastName();
 

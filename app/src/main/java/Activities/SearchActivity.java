@@ -52,8 +52,8 @@ public class SearchActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                ArrayList<Person> people = data.findPeopleWithText(s.toString());
-                ArrayList<Event> events = data.findEventsWithText(s.toString());
+                ArrayList<Person> people = data.searchPeopleByName(s.toString());
+                ArrayList<Event> events = data.searchEventsByID(s.toString());
                 SearchViewAdapter adapter = new SearchViewAdapter(people, events);
                 recyclerView.setAdapter(adapter);
             }

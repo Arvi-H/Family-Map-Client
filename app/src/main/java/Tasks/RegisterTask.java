@@ -8,7 +8,6 @@ import com.example.family_map_client.DataCache;
 import com.example.family_map_client.ServerProxy;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import Fragments.LoginFragment;
@@ -54,7 +53,7 @@ public class RegisterTask implements Runnable{
                 PersonsResult personsResult = serverProxy.getPersons(registerResult.getAuth_token(), serverHost, serverPortNumber);
                 EventsResult eventsResult = serverProxy.getEvents(registerResult.getAuth_token(), serverHost, serverPortNumber);
 
-                dataCache.setData(registerResult.getPersonID(), personsResult, eventsResult);
+                dataCache.initializeData(registerResult.getPersonID(), personsResult, eventsResult);
                 firstName = dataCache.getUser().getFirstName();
                 lastName = dataCache.getUser().getLastName();
 

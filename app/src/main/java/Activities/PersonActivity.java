@@ -44,7 +44,6 @@ public class PersonActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String pID = intent.getStringExtra("PERSON_ID");
         selectedPerson = data.getPeople().get(pID);
-        data.setSelectPerson(selectedPerson);
 
         TextView firstNameView = findViewById(R.id.person_first_name);
         firstNameView.setText(selectedPerson.getFirstName());
@@ -57,7 +56,7 @@ public class PersonActivity extends AppCompatActivity {
 
 
         if (genderCheck(selectedPerson.getGender())){
-            lifeEvents = data.getEventsFromPeople().get(selectedPerson.getPersonID());
+            lifeEvents = data.getPeopleEventsList().get(selectedPerson.getPersonID());
         } else {
             lifeEvents = new ArrayList<>();
         }
@@ -223,7 +222,7 @@ public class PersonActivity extends AppCompatActivity {
                 nameOfPersonView.setText(desiredPerson.getFirstName() + " " + desiredPerson.getLastName());
 
                 TextView relationshipWithUserView = familyView.findViewById(R.id.relationshipWithUser);
-                String relationshipWithUser = data.getRelationships().get(childPosition);
+                String relationshipWithUser = data.getConnections().get(childPosition);
                 relationshipWithUserView.setText(relationshipWithUser);
 
                 familyView.setOnClickListener(v -> {

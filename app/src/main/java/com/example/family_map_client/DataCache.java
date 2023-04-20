@@ -17,15 +17,14 @@ public class DataCache {
 
     private Map<String, Person> people;
     private Map<String, Event> events;
-    private Map<String, Person> childrenById;
-    private Map<String, ArrayList<Event>> eventsFromPeople;
-    private List<String> relationships;
+    private Map<String, Person> children;
+    private Map<String, ArrayList<Event>> peopleEventsList;
+    private List<String> connections;
     private List<Event> maleEvents;
     private List<Event> femaleEvents;
     private Set<Person> userPeople;
     private List<Event> userEvents;
     private Person user;
-    private Person selectPerson;
     private Event selectEvent;
     private boolean isLifeEvent;
     private boolean isSpouseEvent;
@@ -36,131 +35,156 @@ public class DataCache {
     private DataCache() {}
 
     public static DataCache getInstance() {
-        if (instance == null) {instance = new DataCache();}
+        if (instance == null) {
+            instance = new DataCache();
+        }
         return instance;
     }
 
-    public void setData(String personID, PersonsResult personsResult, EventsResult eventsResult) {
+    public void initializeData(String personID, PersonsResult personsResult, EventsResult eventsResult) {
+
+        // Check that inputs are not null
         if (personID != null && personsResult != null && eventsResult != null) {
+
+            // Set initial values of boolean flags
             isLifeEvent = true;
             isSpouseEvent = true;
             isFamilyEvent = true;
             isMale = true;
             isFemale = true;
 
+            // Initialize data structures
+            people = new HashMap<>();
+            events = new HashMap<>();
+            children = new HashMap<>();
+            peopleEventsList = new HashMap<>();
+            femaleEvents = new ArrayList<>();
+            maleEvents = new ArrayList<>();
+            connections = new ArrayList<>();
+            userPeople = new HashSet<>();
+            userEvents = new ArrayList<>();
 
-            this.people = new HashMap<>();
-            this.events = new HashMap<>();
-            this.childrenById = new HashMap<>();
-            this.eventsFromPeople = new HashMap<>();
-            this.femaleEvents = new ArrayList<>();
-            this.maleEvents = new ArrayList<>();
-            this.relationships = new ArrayList<>();
-            this.userPeople = new HashSet<>();
-            this.userPeople = new HashSet<>();
-
+            // Loop through the Person objects in the PersonsResult
             for (Person res : personsResult.getData()) {
-                Person person = new Person(res.getPersonID(), res.getAssociatedUsername(),
-                        res.getFirstName(), res.getLastName(), res.getGender(),
-                        res.getFatherID(), res.getMotherID(), res.getSpouseID());
+                // Create a new Person object based on the PersonResult
+                Person person = new Person(res.getPersonID(), res.getAssociatedUsername(), res.getFirstName(), res.getLastName(), res.getGender(), res.getFatherID(), res.getMotherID(), res.getSpouseID());
+
+                // If the Person has a father ID, add the Person to the childrenById map with the father ID as the key
+                // Otherwise, if the Person has a mother ID, add the Person to the childrenById map with the mother ID as the key
                 if (res.getFatherID() != null) {
-                    this.childrenById.put(res.getFatherID(), res);
-                } else if (res.getMotherID() != null){
-                    this.childrenById.put(res.getMotherID(), res);
+                    this.children.put(res.getFatherID(), res);
+                } else if (res.getMotherID() != null) {
+                    this.children.put(res.getMotherID(), res);
                 }
+
+                // Add the Person to the people map with the person ID as the key
+                // Add the Person to the userPeople set
                 this.people.put(person.getPersonID(), person);
                 this.userPeople.add(res);
             }
 
+            // Get the User's Person object from the people map using the personID parameter
             this.user = people.get(personID);
+            // Initialize the userEvents list
             this.userEvents = new ArrayList<>();
 
-            for (Event res : eventsResult.getData()){
-                Event event = new Event(res.getEventID(), res.getAssociatedUsername(), res.getPersonID(), res.getLatitude(),
-                        res.getLongitude(), res.getCountry(), res.getCity(), res.getEventType(), res.getYear());
+            // Loop through the Event objects in the EventsResult
+            for (Event res : eventsResult.getData()) {
+                // Create a new Event object based on the EventResult
+                Event event = new Event(res.getEventID(), res.getAssociatedUsername(), res.getPersonID(), res.getLatitude(), res.getLongitude(), res.getCountry(), res.getCity(), res.getEventType(), res.getYear());
+
+                // Add the Event to the eventsFromPeople map with the person ID as the key
                 addEvent(res);
+                // Add the Event to the events map with the event ID as the key
                 this.events.put(event.getEventID(), event);
-                if (people.get(res.getPersonID()).getGender().toLowerCase().equals("m")) {
+
+                // If the associated Person is male, add the Event to the maleEvents list
+                // Otherwise, if the associated Person is female, add the Event to the femaleEvents list
+                if (people.get(res.getPersonID()).getGender().equalsIgnoreCase("m")) {
                     this.maleEvents.add(res);
-                } else if (people.get(res.getPersonID()).getGender().toLowerCase().equals("f")) {
+                } else if (people.get(res.getPersonID()).getGender().equalsIgnoreCase("f")) {
                     this.femaleEvents.add(res);
                 }
+
+                // Add the Event to the userEvents list
                 this.userEvents.add(res);
             }
         }
     }
 
-    private void addEvent(Event event){
-        ArrayList<Event> eventList;
-        if (eventsFromPeople.containsKey(event.getPersonID())){
-            eventList = eventsFromPeople.get(event.getPersonID());
-        } else{
-            eventList = new ArrayList<>();
-        }
-        if (event.getEventType().toLowerCase().equals("birth")) {
-            eventList.add(0, event);
-        } else if (event.getEventType().toLowerCase().equals("death")) {
-            eventList.add(eventList.size(), event);
-        } else {
-            if (eventList.size() == 0) {
-                eventList.add(eventList.size(), event);
+    /**
+     * Adds an event to the list of events for a given person, sorting the events
+     * by type (birth, death, other) and then by year and event type.
+     *
+     * @param event the event to add
+     */
+    private void addEvent(Event event) {
+        // Get the list of events for the person
+        ArrayList<Event> eventList = peopleEventsList.getOrDefault(event.getPersonID(), new ArrayList<>());
+
+        // Determine the appropriate index to insert the new event
+        int index = 0;
+        for (Event compareEvent : eventList) {
+            // Sort by birth event first
+            if (compareEvent.getEventType().equalsIgnoreCase("birth")) {
+                break;
+            }
+            // Sort by death event last
+            if (compareEvent.getEventType().equalsIgnoreCase("death")) {
+                index++;
+                continue;
+            }
+            // Sort by year and then by event type
+            if (compareEvent.getYear() < event.getYear()
+                    || (compareEvent.getYear() == event.getYear()
+                    && compareEvent.getEventType().compareToIgnoreCase(event.getEventType()) < 0)) {
+                index++;
             } else {
-                for (int i = 0; i < eventList.size(); i++) {
-                    Event compareEvent = eventList.get(i);
-                    if (compareEvent.getEventType().toLowerCase().equals("birth")) {
-                        if (eventList.size() == 1) {
-                            eventList.add(1, event);
-                            break;
-                        }
-                    } else if (compareEvent.getEventType().toLowerCase().equals("death")) {
-                        eventList.add(i, event);
-                        break;
-                    } else {
-                        if (compareEvent.getYear() > event.getYear()) {
-                            eventList.add(i, event);
-                            break;
-                        } else if (compareEvent.getYear() == event.getYear()) {
-                            if (compareEvent.getEventType().toLowerCase().
-                                    compareTo(event.getEventType().toLowerCase())
-                                    > 0) {
-                                eventList.add(i, event);
-                                break;
-                            }
-                        }
-                        if (i == eventList.size() - 1) {
-                            eventList.add(eventList.size(), event);
-                            break;
-                        }
-                    }
-                }
+                break;
             }
         }
-        this.eventsFromPeople.put(event.getPersonID(), eventList);
+
+        // Insert the new event at the determined index
+        eventList.add(index, event);
+        // Update the map of events for the person
+        peopleEventsList.put(event.getPersonID(), eventList);
     }
 
+    public ArrayList<Person> searchPeopleByName(String text) {
+        // Create a new ArrayList to store matching people
+        ArrayList<Person> peopleNames = new ArrayList<>();
 
-    public ArrayList<Person> findPeopleWithText(String text) {
-        ArrayList<Person> peopleWithText = new ArrayList<>();
+        // Iterate over all people in the userPeople list
         for (Person person : userPeople) {
-            if (person.getFirstName().toLowerCase().contains(text.toLowerCase()) ||
-                    person.getLastName().toLowerCase().contains(text.toLowerCase())) {
-                peopleWithText.add(person);
+            // Check if the first name or last name of the person contains the search text (ignoring case)
+            if (person.getFirstName().toLowerCase().contains(text.toLowerCase()) || person.getLastName().toLowerCase().contains(text.toLowerCase())) {
+                // If there is a match, add the person to the peopleNames list
+                peopleNames.add(person);
             }
         }
-        return peopleWithText;
+
+        // Return the list of matching people
+        return peopleNames;
     }
 
-    public ArrayList<Event> findEventsWithText(String text) {
-        ArrayList<Event> eventsWithText = new ArrayList<>();
+    public ArrayList<Event> searchEventsByID(String text) {
+        // Create a new ArrayList to store matching events
+        ArrayList<Event> eventIDs = new ArrayList<>();
+
+        // Iterate over all events in the userEvents list
         for (Event event : userEvents) {
+            // Check if the event's country, city, event type, or year contain the search text (ignoring case)
             if (event.getCountry().toLowerCase().contains(text.toLowerCase()) ||
                     event.getCity().toLowerCase().contains(text.toLowerCase()) ||
                     event.getEventType().toLowerCase().contains(text.toLowerCase()) ||
                     String.valueOf(event.getYear()).contains(text.toLowerCase())) {
-                eventsWithText.add(event);
+                // If there is a match, add the event to the eventIDs list
+                eventIDs.add(event);
             }
         }
-        return eventsWithText;
+
+        // Return the list of matching events
+        return eventIDs;
     }
 
     public Person getUser() {
@@ -171,14 +195,8 @@ public class DataCache {
         return events;
     }
 
-    public Map<String, Person> getPeople() { return people; }
-
-    public void setSelectPerson(Person selectPerson) {
-        this.selectPerson = selectPerson;
-    }
-
-    public Person getSelectPerson() {
-        return selectPerson;
+    public Map<String, Person> getPeople() {
+        return people;
     }
 
     public Event getSelectEvent() {
@@ -189,36 +207,37 @@ public class DataCache {
         this.selectEvent = selectEvent;
     }
 
-    public List<String> getRelationships() {
-        return relationships;
+    public List<String> getConnections() {
+        return connections;
     }
 
-    public Map<String, ArrayList<Event>> getEventsFromPeople() {
-        return eventsFromPeople;
+    public Map<String, ArrayList<Event>> getPeopleEventsList() {
+        return peopleEventsList;
     }
 
     public List<Person> family(String id) {
+        // Get the current person
         Person currPerson = getPeople().get(id);
+        // Create a new list to hold the family members
         List<Person> personList = new ArrayList<>();
 
-        if(getPeople().get(currPerson.getSpouseID()) != null){
-            personList.add(getPeople().get(currPerson.getSpouseID()));
-            relationships.add("Spouse");
-        }
-        if(getPeople().get(currPerson.getMotherID()) != null){
-            personList.add(getPeople().get(currPerson.getMotherID()));
-            relationships.add("Mother");
-        }
-        if(getPeople().get(currPerson.getFatherID()) != null){
-            personList.add(getPeople().get(currPerson.getFatherID()));
-            relationships.add("Father");
-        }
-        if(getPeople().get(currPerson.getPersonID()) != null){
-            personList.add(getPeople().get(currPerson.getPersonID()));
-            relationships.add("Child");
-        }
+        addPersonIfNotNull(personList, getPeople().get(currPerson.getSpouseID()), "Spouse");
+        addPersonIfNotNull(personList, getPeople().get(currPerson.getMotherID()), "Mother");
+        addPersonIfNotNull(personList, getPeople().get(currPerson.getFatherID()), "Father");
+        addPersonIfNotNull(personList, currPerson, "Child");
 
+        // Return the list of family members
         return personList;
+    }
+
+    // Helper method to add a person to a list if the person is not null
+    private void addPersonIfNotNull(List<Person> personList, Person person, String relationship) {
+        if (person != null) {
+            // Add the person to the list of family members
+            personList.add(person);
+            // Update the relationship
+            connections.add(relationship);
+        }
     }
 
     public boolean isLifeEvent() {
@@ -228,7 +247,6 @@ public class DataCache {
     public void setLifeEvent(boolean lifeEvent) {
         this.isLifeEvent = lifeEvent;
     }
-
 
     public boolean isSpouseEvent() {
         return isSpouseEvent;
@@ -266,24 +284,27 @@ public class DataCache {
         return userEvents;
     }
 
-    public void logout(){
-        this.people.clear();
-        this.events.clear();
-        this.childrenById.clear();
-        this.eventsFromPeople.clear();
-        this.relationships.clear();
-        this.maleEvents.clear();
-        this.femaleEvents.clear();
-        this.userPeople.clear();
-        this.userEvents.clear();
-        this.user = null;
-        this.selectPerson = null;
-        this.selectEvent = null;
-        this.isLifeEvent = true;
-        this.isSpouseEvent = true;
-        this.isFamilyEvent = true;
-        this.isMale = true;
-        this.isFemale = true;
-    }
+    public void logout() {
+        // Clear all data structures
+        people.clear();
+        events.clear();
+        children.clear();
+        peopleEventsList.clear();
+        connections.clear();
+        maleEvents.clear();
+        femaleEvents.clear();
+        userPeople.clear();
+        userEvents.clear();
 
+        // Reset current user, selected person, and selected event
+        user = null;
+        selectEvent = null;
+
+        // Reset filter options
+        isLifeEvent = true;
+        isSpouseEvent = true;
+        isFamilyEvent = true;
+        isMale = true;
+        isFemale = true;
+    }
 }

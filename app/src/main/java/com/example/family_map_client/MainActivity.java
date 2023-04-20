@@ -17,29 +17,31 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Lis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Get the current fragment
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment currentFragment = fragmentManager.findFragmentById(R.id.fragment_container);
 
+        // Check if the intent has extras (i.e., if the user just logged out)
         if (getIntent().getExtras() != null) {
+            // Show the map fragment
             notifyDone();
         } else if (currentFragment == null) {
-            Fragment newFragment = new LoginFragment();
-            fragmentManager.beginTransaction()
-                    .add(R.id.fragment_container, newFragment)
-                    .commit();
-            ((LoginFragment) newFragment).setListener(this);
+            // If there is no current fragment, show the login fragment
+            LoginFragment newFragment = new LoginFragment();
+            fragmentManager.beginTransaction().add(R.id.fragment_container, newFragment).commit();
+            // Set the listener for the login fragment
+            newFragment.setListener(this);
         }
     }
 
+
     @Override
     public void notifyDone() {
+        // Create a new MapFragment instance
         Fragment mapFragment = new MapFragment();
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-        fragmentTransaction.replace(R.id.fragment_container, mapFragment);
-        fragmentTransaction.addToBackStack(null);
-
-        fragmentTransaction.commit();
+        // Replace the current fragment with the MapFragment
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, mapFragment).addToBackStack(null).commit();
     }
+
 }
