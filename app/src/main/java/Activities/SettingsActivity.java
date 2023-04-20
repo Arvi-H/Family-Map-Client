@@ -17,106 +17,61 @@ import com.example.family_map_client.R;
 public class SettingsActivity extends AppCompatActivity {
 
     private Switch lifeStoryLines;
-    private Switch familyTreeLines;
+    private Switch familyLines;
     private Switch spouseLines;
-
-    private Switch fathersSide;
-    private Switch mothersSide;
-    private Switch maleEvents;
-    private Switch femaleEvents;
 
     private DataCache data = DataCache.getInstance();
 
+    // This method is called when the activity is created
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+
+        // Enable the "up" button in the action bar to allow navigation to the parent activity
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        // Get references to the life story, family tree, and spouse lines switches in the layout
         lifeStoryLines = findViewById(R.id.lifeStoryLinesSwitch);
+        familyLines = findViewById(R.id.familyTreeLinesSwitch);
+        spouseLines = findViewById(R.id.spouseLinesSwitch);
 
+        // Set the switches to their previous values from the data cache
         if (data.isLifeEvent()) {
             lifeStoryLines.setChecked(true);
         }
-
-        lifeStoryLines.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
-                    data.setLifeEvent(true);
-                } else {
-                    data.setLifeEvent(false);
-                }
-            }
-        });
-
-        familyTreeLines = findViewById(R.id.familyTreeLinesSwitch);
-
         if (data.isFamilyEvent()) {
-            familyTreeLines.setChecked(true);
+            familyLines.setChecked(true);
         }
-        familyTreeLines.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
-                    data.setFamilyEvent(true);
-                } else {
-                    data.setFamilyEvent(false);
-                }
-            }
-        });
-
-        spouseLines = findViewById(R.id.spouseLinesSwitch);
-
         if (data.isSpouseEvent()) {
             spouseLines.setChecked(true);
         }
+
+        // Set listeners for the switches to update the data cache when they are changed
+        lifeStoryLines.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                data.setLifeEvent(isChecked);
+            }
+        });
+        familyLines.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                data.setFamilyEvent(isChecked);
+            }
+        });
         spouseLines.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
-                    data.setSpouseEvent(true);
-                } else {
-                    data.setSpouseEvent(false);
-                }
+                data.setSpouseEvent(isChecked);
             }
         });
 
-        maleEvents = findViewById(R.id.settingMaleEventsSwitch);
-
-        if (data.isMale()) {
-            maleEvents.setChecked(true);
-        }
-        maleEvents.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
-                    data.setMale(true);
-                } else {
-                    data.setMale(false);
-                }
-            }
-        });
-
-        femaleEvents = findViewById(R.id.settingFemaleEventSwitch);
-
-        if (data.isFemale()) {
-            femaleEvents.setChecked(true);
-        }
-        femaleEvents.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
-                    data.setFemale(true);
-                } else {
-                    data.setFemale(false);
-                }
-            }
-        });
-
+        // Get a reference to the logout button in the layout
         RelativeLayout logoutLayout = findViewById(R.id.logoutButton);
-        logoutLayout.setOnClickListener(new View.OnClickListener() {
 
+        // Set a click listener for the logout button to clear the data cache, launch the MainActivity, and finish the activity
+        logoutLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 data.logout();
@@ -128,18 +83,15 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         if (item.getItemId() == android.R.id.home) {
-
-            Intent intent= new Intent(this, MainActivity.class);
-            intent.putExtra("SETTING", true);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-
+            // Launch the MainActivity with the setting flag and clear the activity stack
+            startActivity(new Intent(this, MainActivity.class).putExtra("SETTING", true).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+            return true;
         }
-
-        return true;
+        return super.onOptionsItemSelected(item);
     }
+
 }

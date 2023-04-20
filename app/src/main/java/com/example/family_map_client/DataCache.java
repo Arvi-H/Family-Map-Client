@@ -215,7 +215,7 @@ public class DataCache {
         return peopleEventsList;
     }
 
-    public List<Person> family(String id) {
+    public List<Person> getFamily(String id) {
         // Get the current person
         Person currPerson = getPeople().get(id);
         // Create a new list to hold the family members
