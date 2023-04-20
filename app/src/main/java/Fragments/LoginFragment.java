@@ -73,8 +73,21 @@ public class LoginFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.login_fragment, container, false);
 
+        // Get references to all the views in the layout
+        findViews();
+
+        // Set up the UI
+        setUpUi();
+
+        // Return the inflated view
+        return view;
+    }
+
+    private void findViews() {
+        // Get references to all the views in the layout
         serverHost = view.findViewById(R.id.server_host);
         serverPortNumber = view.findViewById(R.id.server_port);
         username = view.findViewById(R.id.user_name);
@@ -85,25 +98,32 @@ public class LoginFragment extends Fragment {
         genderGroup = view.findViewById(R.id.gender_group);
         loginButton = view.findViewById(R.id.log_in_button);
         registerButton = view.findViewById(R.id.register_button);
+    }
 
+    private void setUpUi() {
+        // Create a text watcher to enable/disable buttons when text changes
         TextWatcher textWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override public void afterTextChanged(Editable s) {
-                enableButtons();
-            }
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) { enableButtons(); }
         };
 
+        // Add the text watcher to all the EditText views
         List<EditText> editTexts = Arrays.asList(serverHost, serverPortNumber, username, password, firstName, lastName, email);
         editTexts.forEach(editText -> editText.addTextChangedListener(textWatcher));
 
-
+        // Set the onCheckedChangeListener for the gender radio group
         genderGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            // New Request
+            // Create a new RegisterRequest object
             registerRequest = new RegisterRequest();
 
+            // Enable/disable buttons based on the text in the EditText views
             enableButtons();
 
+            // Set the gender in the RegisterRequest based on the selected radio button
             switch (checkedId) {
                 case R.id.radio_male:
                     registerRequest.setGender("m");
@@ -114,13 +134,11 @@ public class LoginFragment extends Fragment {
             }
         });
 
+        // Disable the login and register buttons until text is entered into the EditText views
         loginButton.setEnabled(false);
         loginButton.setOnClickListener(v -> onLoginClick());
-
         registerButton.setEnabled(false);
         registerButton.setOnClickListener(v -> onRegisterClick());
-
-        return view;
     }
 
     private void onLoginClick() {
@@ -145,10 +163,15 @@ public class LoginFragment extends Fragment {
         executor.submit(register);
     }
 
+    /**
+     * Enables or disables the login and register buttons based on the text entered in the EditText views.
+     */
     private void enableButtons() {
+        // Determine if the login button should be enabled based on whether the required fields have text
         boolean loginEnabled = serverHost.length() > 0 && serverPortNumber.length() > 0 && username.length() > 0 && password.length() > 0;
         loginButton.setEnabled(loginEnabled);
 
+        // Determine if the register button should be enabled based on whether the required fields have text and a gender is selected
         boolean registrationEnabled = loginEnabled && firstName.length() > 0 && lastName.length() > 0 && email.length() > 0 && genderGroup.getCheckedRadioButtonId() != -1;
         registerButton.setEnabled(registrationEnabled);
     }

@@ -41,45 +41,47 @@ import Model.Person;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
     private GoogleMap map;
-    private SupportMapFragment mapFragment;
-    private List<Event> events;
+    private List<Event> eventList;
+    private List<Polyline> lineList = new ArrayList<>();
+    private final Map<String, Float> colors = new HashMap();
+    private Map<Marker, Event> markers = new HashMap<>();
+    private DataCache dataCache = DataCache.getInstance();
+    String selectedEventId = null;
 
-    private Map<String, Float> mapOfColors = new HashMap();
-    private Map<Marker, Event> mapOfMarkers = new HashMap<>();
-    private List<Polyline> listOfLines = new ArrayList<>();
-
-    private DataCache data = DataCache.getInstance();
     private Float marker = 60f;
-    private Marker currMarker;
-    private TextView name;
-    private TextView event;
+    private Marker mainMarker;
+    private TextView personName;
+    private TextView eventName;
     private TextView year;
     private ImageView icon;
 
-    String ifActivity = null;
 
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        super.onCreateView(inflater, container, savedInstanceState);
+        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.map_fragment, container, false);
 
-        if (getArguments() != null){
-            ifActivity = getArguments().getString("EVENT_ID");
-        }
-        if (ifActivity == null){
-            setHasOptionsMenu(true);
+        // Get the selected event ID from the fragment arguments, if any
+        if (getArguments() != null) {
+            selectedEventId = getArguments().getString("EVENT_ID");
         }
 
-        name = view.findViewById(R.id.person_name);
-        event = view.findViewById(R.id.event_details);
+        // If there is no selected event ID, enable options menu for this fragment
+        if (selectedEventId == null) {setHasOptionsMenu(true);}
+
+        // Find views by ID
+        personName = view.findViewById(R.id.person_name);
+        eventName = view.findViewById(R.id.event_details);
         year = view.findViewById(R.id.year);
         icon = view.findViewById(R.id.map_icon);
 
+        // Get the Google Map asynchronously
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
-        assert mapFragment != null;
+        assert mapFragment != null; // Make sure the map fragment is not null
         mapFragment.getMapAsync(this);
 
+        // Return the inflated view
         return view;
     }
 
@@ -87,40 +89,49 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     public void onMapReady(@NonNull GoogleMap googleMap) {
         map = googleMap;
         map.setOnMapLoadedCallback(this);
-
-        events = data.getUserEvents();
-
+        eventList = dataCache.getUserEvents();
         addMarkers();
     }
 
-    View.OnClickListener onClickText = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            Intent intent = new Intent(getActivity(), PersonActivity.class);
-            Person person = data.getPeople().get(mapOfMarkers.get(currMarker).getPersonID());
-            intent.putExtra("PERSON_ID", person.getPersonID());
-            startActivity(intent);
-        }
+    // Define an OnClickListener for a text view
+    View.OnClickListener onClickText = v -> {
+        // Create an intent to start the PersonActivity
+        Intent intent = new Intent(getActivity(), PersonActivity.class);
+
+        // Get the Person object associated with the selected marker
+        Person person = dataCache.getPeople().get(markers.get(mainMarker).getPersonID());
+
+        // Put the person ID as an extra in the intent
+        intent.putExtra("PERSON_ID", person.getPersonID());
+
+        // Start the PersonActivity
+        startActivity(intent);
     };
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu, menu);
-        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.menu, menu);     // Inflate the options menu layout
+        super.onCreateOptionsMenu(menu, inflater);    // Call the superclass implementation
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        // Declare an intent variable to hold the intent to start an activity
         Intent intent;
+
+        // Switch statement to handle different menu item selections
         switch (item.getItemId()) {
+            // If the "Search" menu item is selected, start the SearchActivity
             case R.id.menu_item_search:
                 intent = new Intent(getActivity(), SearchActivity.class);
                 startActivity(intent);
                 return true;
+            // If the "Settings" menu item is selected, start the SettingsActivity
             case R.id.menu_item_settings:
                 intent = new Intent(getActivity(), SettingsActivity.class);
                 startActivity(intent);
                 return true;
+            // If an unknown menu item is selected, call the superclass implementation
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -129,199 +140,205 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, GoogleM
     @Override
     public void onMapLoaded() {}
 
-    private void addMarkers(){
-        float color = 0.0f;
-
-        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker mar) {
-                clickMarker(mar);
-                return true;
-            }
+    /**
+     * Adds markers to the map for each event in the event list.
+     */
+    private void addMarkers() {
+        // Set the onMarkerClickListener for the map
+        map.setOnMarkerClickListener(mar -> {
+            markerClick(mar);
+            return true;
         });
 
-        for (Event currEvent : events){
-            if (currEvent.getEventType().toLowerCase().equals("birth")) {
-                color = BitmapDescriptorFactory.HUE_RED;
-            } else if (currEvent.getEventType().toLowerCase().equals("death")) {
-                color = BitmapDescriptorFactory.HUE_BLUE;
-            } else if (currEvent.getEventType().toLowerCase().equals("marriage")) {
-                color = BitmapDescriptorFactory.HUE_GREEN;
-            } else if (mapOfColors.containsKey(currEvent.getEventType().toLowerCase())){
-                color = mapOfColors.get(currEvent.getEventType().toLowerCase());
-            }
-            else {
-                mapOfColors.put(currEvent.getEventType().toLowerCase(), marker);
+        // Define the colors to use for different event types
+        colors.put("birth", BitmapDescriptorFactory.HUE_RED);
+        colors.put("death", BitmapDescriptorFactory.HUE_BLUE);
+        colors.put("marriage", BitmapDescriptorFactory.HUE_GREEN);
+
+        // Loop through each event in the event list
+        for (Event currEvent : eventList) {
+            // Determine the color for the marker based on the event type
+            Float color = colors.get(currEvent.getEventType().toLowerCase());
+            if (color == null) {
+                // If no color is defined for this event type, generate a new color and store it in the map
                 color = marker;
                 marker += 15;
+                colors.put(currEvent.getEventType().toLowerCase(), color);
             }
 
+            // Add the marker to the map and store it in the markers map
             LatLng newMark = new LatLng(currEvent.getLatitude(), currEvent.getLongitude());
-            Marker newM = map.addMarker(new MarkerOptions().position(newMark).icon(BitmapDescriptorFactory.defaultMarker(color)).title(currEvent.getEventType()));
-            map.animateCamera(CameraUpdateFactory.newLatLng(newMark));
-            mapOfMarkers.put(newM, currEvent);
-            if (data.getSelectEvent() != null) {
-                if (data.getSelectEvent().equals(currEvent)) {
-                    currMarker = newM;
-                }
+            Marker newM = map.addMarker(new MarkerOptions()
+                    .position(newMark)
+                    .icon(BitmapDescriptorFactory.defaultMarker(color))
+                    .title(currEvent.getEventType()));
+            markers.put(newM, currEvent);
+
+            // If this event is the selected event, set the mainMarker
+            if (dataCache.getSelectEvent() != null && dataCache.getSelectEvent().equals(currEvent)) {
+                mainMarker = newM;
             }
         }
 
-        if (ifActivity != null){
-            map.moveCamera(CameraUpdateFactory.newLatLng(currMarker.getPosition()));
-            clickMarker(currMarker);
+        // If a selected event was passed in, center the map on the mainMarker and update the UI
+        if (selectedEventId != null) {
+            map.moveCamera(CameraUpdateFactory.newLatLng(mainMarker.getPosition()));
+            markerClick(mainMarker);
         }
     }
 
-    void clickMarker(Marker m) {
-        Event currE = mapOfMarkers.get(m);
-        Person currP = data.getPeople().get(currE.getPersonID());
+
+
+    void markerClick(Marker m) {
+        // Get the Event and Person associated with the clicked Marker
+        Event currE = markers.get(m);
+        Person currP = dataCache.getPeople().get(currE.getPersonID());
+
+        // Construct the person name, event info, and year info strings
         String newName = currP.getFirstName() + " " + currP.getLastName();
-        String eventInfo = currE.getEventType() + ": " + currE.getCity() + ", " + currE.getCountry();
+        StringBuilder eventInfo = new StringBuilder();
+        eventInfo.append(currE.getEventType()).append(": ").append(currE.getCity()).append(", ").append(currE.getCountry());
         String yearInfo = "(" + currE.getYear() + ")";
 
-        name.setText(newName);
-        name.setVisibility(View.VISIBLE);
-        name.setOnClickListener(onClickText);
-
-        event.setText(eventInfo);
-        event.setVisibility(View.VISIBLE);
-        event.setOnClickListener(onClickText);
-
+        // Set the text and visibility for the person name, event info, and year info TextViews
+        personName.setText(newName);
+        eventName.setText(eventInfo);
         year.setText(yearInfo);
+        personName.setVisibility(View.VISIBLE);
+        eventName.setVisibility(View.VISIBLE);
         year.setVisibility(View.VISIBLE);
-        year.setOnClickListener(onClickText);
 
-        if (currP.getGender().toLowerCase().equals("m")){
-            icon.setImageDrawable(getResources().getDrawable(R.drawable.download));
-        } else {
-            icon.setImageDrawable(getResources().getDrawable(R.drawable.girl));
-        }
-
+        // Set the icon drawable based on the person's gender
+        int iconDrawableId = currP.getGender().toLowerCase().equals("m") ? R.drawable.download : R.drawable.girl;
+        icon.setImageDrawable(getResources().getDrawable(iconDrawableId));
         icon.setVisibility(View.VISIBLE);
+
+        // Set the onClickListener for all the TextViews and the icon
+        personName.setOnClickListener(onClickText);
+        eventName.setOnClickListener(onClickText);
+        year.setOnClickListener(onClickText);
         icon.setOnClickListener(onClickText);
 
-        currMarker = m;
-        data.setSelectEvent(currE);
-        drawLines(currE);
+        // Save the clicked Marker as the mainMarker and the associated Event as the selected event in the data cache
+        mainMarker = m;
+        dataCache.setSelectEvent(currE);
+
+        // Draw the associated lines on the map
+        draw(currE);
     }
 
-    private void drawLines(Event currE) {
+    /**
+     * Draw lines on the map based on the current event and the types of lines that should be drawn
+     * @param event The current event to draw lines from
+     */
+    private void draw(Event event) {
         removeLines();
-        if (data.isLifeEvent()){
-            lifeStoryLines(currE);
-        }
-        if (data.isFamilyEvent()){
-            familyTreeLines(currE);
-        }
-        if (data.isSpouseEvent()){
-            spouseLines(currE);
-        }
+        if (dataCache.isLifeEvent()){lifeStoryLines(event);}
+        if (dataCache.isFamilyEvent()){
+            familyLines(event);}
+        if (dataCache.isSpouseEvent()){spouseLines(event);}
     }
 
-    private void lifeStoryLines(Event currE){
-        List<Event> lifeEvents = data.getPeopleEventsList().get(currE.getPersonID());
-        Event currEvent = null;
-        if (lifeEvents.size() > 1) {
-            for (Event lifeEvent : lifeEvents) {
-                if (data.getEvents().containsValue(lifeEvent)){
-                    if (currEvent != null) {
-                        Polyline newestLine = map.addPolyline(new PolylineOptions()
-                                .add(new LatLng(currEvent.getLatitude(), currEvent.getLongitude()),
-                                        new LatLng(lifeEvent.getLatitude(), lifeEvent.getLongitude()))
-                                .color(0xffF9A825));
-                        listOfLines.add(newestLine);
-                    }
-                    currEvent = lifeEvent;
+    /**
+     * Draw life story lines for a person based on their life events
+     * @param currE The current event to start drawing lines from
+     */
+    private void lifeStoryLines(Event currE) {
+        // Get the list of life events for the current person
+        List<Event> lifeEvents = dataCache.getPeopleEventsList().get(currE.getPersonID());
 
-                }
+        // Declare a variable to hold the previous event
+        Event prevEvent = null;
+
+        // Iterate through each life event for the current person and draw lines between them
+        for (Event lifeEvent : lifeEvents) {
+            if (prevEvent != null) {
+                // Add a new polyline between the previous event and the current event
+                Polyline newestLine = map.addPolyline(new PolylineOptions()
+                        .add(new LatLng(prevEvent.getLatitude(), prevEvent.getLongitude()),
+                                new LatLng(lifeEvent.getLatitude(), lifeEvent.getLongitude()))
+                        .color(0xff00BFFF)); // Blue
+                lineList.add(newestLine);
             }
-        } else if (lifeEvents.size() <= 1) {
 
+            // Set the previous event to the current event for the next iteration
+            prevEvent = lifeEvent;
         }
     }
 
-    private void familyTreeLines(Event currE){
-        familyTreeLinesHelper(data.getPeople().get(currE.getPersonID()), currE, 10);
+    /**
+     * Draw family lines for a person based on their family relationships
+     *
+     * @param event The current event to start drawing lines from
+     */
+    private void familyLines(Event event) {
+        familyTreeLines(dataCache.getPeople().get(event.getPersonID()), event, 10);
     }
 
-    private void familyTreeLinesHelper(Person currPerson, Event currEvent, int generation){
-        if (currPerson.getFatherID() != null){
-            addFatherLines(currPerson, currEvent, generation);
+    /**
+     * Helper method to draw family tree lines recursively
+     * @param person The current person to draw lines for
+     * @param currEvent The current event to start drawing lines from
+     * @param generation The current generation to draw lines for
+     */
+    private void familyTreeLines(Person person, Event currEvent, int generation) {
+        if (person == null || generation == 0) { return; }
+
+        if (person.getFatherID() != null) {
+            addFamilyLine(currEvent, person.getFatherID(), 0xbbb444, generation);
         }
-        if (currPerson.getMotherID() != null){
-            addMotherLines(currPerson, currEvent, generation);
+
+        if (person.getMotherID() != null) {
+            addFamilyLine(currEvent, person.getMotherID(), 0xfffb6eee, generation);
         }
     }
 
-    private void addFatherLines(Person currPerson, Event currEvent, int generation){
-        List<Event> eventsList = data.getPeopleEventsList().get(currPerson.getFatherID());
-
-        for (int i = 0; i < eventsList.size(); i++) {
-            if (data.getEvents().containsValue(eventsList.get(i))) {
-                Event validEvent = eventsList.get(i);
-
+    /**
+     * Add a family line for a person's father or mother
+     * @param currEvent The current event to start drawing lines from
+     * @param parentID The ID of the parent to draw lines for
+     * @param color The color to use for the line
+     * @param generation The current generation to draw lines for
+     */
+    private void addFamilyLine(Event currEvent, String parentID, int color, int generation) {
+        List<Event> eventsList = dataCache.getPeopleEventsList().get(parentID);
+        for (Event event : eventsList) {
+            if (dataCache.getEvents().containsValue(event)) {
                 Polyline newestLine = map.addPolyline(new PolylineOptions()
                         .add(new LatLng(currEvent.getLatitude(), currEvent.getLongitude()),
-                                new LatLng(validEvent.getLatitude(), validEvent.getLongitude()))
-                        .color(0xbbb444)
+                                new LatLng(event.getLatitude(), event.getLongitude()))
+                        .color(color)
                         .width(generation));
-                listOfLines.add(newestLine);
-
-                Person father = data.getPeople().get(currPerson.getFatherID());
-                familyTreeLinesHelper(father, validEvent, generation / 2);
-                return;
-            }
-        }
-    }
-
-    private void addMotherLines(Person currPerson, Event currEvent, int generation){
-        List<Event> eventsList = data.getPeopleEventsList().get(currPerson.getMotherID());
-
-        for (int i = 0; i < eventsList.size(); i++) {
-            if (data.getEvents().containsValue(eventsList.get(i))) {
-                Event validEvent = eventsList.get(i);
-
-                Polyline newestLine = map.addPolyline(new PolylineOptions()
-                        .add(new LatLng(currEvent.getLatitude(), currEvent.getLongitude()),
-                                new LatLng(validEvent.getLatitude(), validEvent.getLongitude()))
-                        .color(0xfffb6eee)
-                        .width(generation));
-                listOfLines.add(newestLine);
-
-                Person mother = data.getPeople().get(currPerson.getMotherID());
-                familyTreeLinesHelper(mother, validEvent, generation / 2);
-                return;
-            }
-        }
-    }
-
-    private void spouseLines(Event currE){
-        Person currPerson = data.getPeople().get(currE.getPersonID());
-        List<Event> eventsList = data.getPeopleEventsList().get(currPerson.getSpouseID());
-
-//        Filter filter = model.getFilter();
-
-//        if (filter.containsEventType(currEvent.getEventType())) {
-        for (int i = 0; i < eventsList.size(); i++) {
-            if (data.getEvents().containsValue(eventsList.get(i))) {
-                Event spouseValidEvent = eventsList.get(i);
-
-                Polyline newestLine = map.addPolyline(new PolylineOptions()
-                        .add(new LatLng(spouseValidEvent.getLatitude(), spouseValidEvent.getLongitude()),
-                                new LatLng(currE.getLatitude(), currE.getLongitude()))
-                        .color(0xccc8ccc6));
-                listOfLines.add(newestLine);
+                lineList.add(newestLine);
+                familyTreeLines(dataCache.getPeople().get(parentID), event, generation / 2);
                 break;
             }
         }
-//        }
     }
 
-    private void removeLines(){
-        for (Polyline curr : listOfLines){
-            curr.remove();
+    /**
+     * Draw spouse lines for a person based on their spouse relationship
+     *
+     * @param currE The current event to start drawing lines from
+     */
+    private void spouseLines(Event currE) {
+        Person currPerson = dataCache.getPeople().get(currE.getPersonID());
+        List<Event> eventsList = dataCache.getPeopleEventsList().get(currPerson.getSpouseID());
+        for (Event event : eventsList) {
+            if (dataCache.getEvents().containsValue(event)) {
+                Polyline newestLine = map.addPolyline(new PolylineOptions()
+                        .add(new LatLng(event.getLatitude(), event.getLongitude()),
+                                new LatLng(currE.getLatitude(), currE.getLongitude()))
+                        .color(0xFF8B00FF)); // Purple
+                lineList.add(newestLine);
+                break;
+            }
         }
-        listOfLines = new ArrayList<>();
+    }
+
+
+    private void removeLines(){
+        for (Polyline line : lineList) {line.remove();}
+        lineList = new ArrayList<>();
     }
 }
