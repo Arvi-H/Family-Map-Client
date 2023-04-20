@@ -20,14 +20,18 @@ public class DataCache {
     private Map<String, Person> childrenById;
     private Map<String, ArrayList<Event>> eventsFromPeople;
     private List<String> relationships;
-    private Set<Event> maleEvents;
-    private Set<Event> femaleEvents;
+    private List<Event> maleEvents;
+    private List<Event> femaleEvents;
     private Set<Person> userPeople;
-    private Set<Event> userEvents;
+    private List<Event> userEvents;
     private Person user;
     private Person selectPerson;
     private Event selectEvent;
-
+    private boolean isLifeEvent;
+    private boolean isSpouseEvent;
+    private boolean isFamilyEvent;
+    private boolean isMale;
+    private boolean isFemale;
 
     private DataCache() {}
 
@@ -38,12 +42,19 @@ public class DataCache {
 
     public void setData(String personID, PersonsResult personsResult, EventsResult eventsResult) {
         if (personID != null && personsResult != null && eventsResult != null) {
+            isLifeEvent = true;
+            isSpouseEvent = true;
+            isFamilyEvent = true;
+            isMale = true;
+            isFemale = true;
+
+
             this.people = new HashMap<>();
             this.events = new HashMap<>();
             this.childrenById = new HashMap<>();
             this.eventsFromPeople = new HashMap<>();
-            this.femaleEvents = new HashSet<>();
-            this.maleEvents = new HashSet<>();
+            this.femaleEvents = new ArrayList<>();
+            this.maleEvents = new ArrayList<>();
             this.relationships = new ArrayList<>();
             this.userPeople = new HashSet<>();
             this.userPeople = new HashSet<>();
@@ -62,13 +73,18 @@ public class DataCache {
             }
 
             this.user = people.get(personID);
-            this.userEvents = new HashSet<>();
+            this.userEvents = new ArrayList<>();
 
             for (Event res : eventsResult.getData()){
                 Event event = new Event(res.getEventID(), res.getAssociatedUsername(), res.getPersonID(), res.getLatitude(),
                         res.getLongitude(), res.getCountry(), res.getCity(), res.getEventType(), res.getYear());
                 addEvent(res);
                 this.events.put(event.getEventID(), event);
+                if (people.get(res.getPersonID()).getGender().toLowerCase().equals("m")) {
+                    this.maleEvents.add(res);
+                } else if (people.get(res.getPersonID()).getGender().toLowerCase().equals("f")) {
+                    this.femaleEvents.add(res);
+                }
                 this.userEvents.add(res);
             }
         }
@@ -177,16 +193,8 @@ public class DataCache {
         return relationships;
     }
 
-    public void setRelationships(List<String> relationships) {
-        this.relationships = relationships;
-    }
-
     public Map<String, ArrayList<Event>> getEventsFromPeople() {
         return eventsFromPeople;
-    }
-
-    public void setEventsFromPeople(Map<String, ArrayList<Event>> eventsFromPeople) {
-        this.eventsFromPeople = eventsFromPeople;
     }
 
     public List<Person> family(String id) {
@@ -212,4 +220,70 @@ public class DataCache {
 
         return personList;
     }
+
+    public boolean isLifeEvent() {
+        return isLifeEvent;
+    }
+
+    public void setLifeEvent(boolean lifeEvent) {
+        this.isLifeEvent = lifeEvent;
+    }
+
+
+    public boolean isSpouseEvent() {
+        return isSpouseEvent;
+    }
+
+    public void setSpouseEvent(boolean spouseEvent) {
+        this.isSpouseEvent = spouseEvent;
+    }
+
+    public boolean isFamilyEvent() {
+        return isFamilyEvent;
+    }
+
+    public void setFamilyEvent(boolean familyEvent) {
+        this.isFamilyEvent = familyEvent;
+    }
+
+    public boolean isMale() {
+        return isMale;
+    }
+
+    public void setMale(boolean male) {
+        this.isMale = male;
+    }
+
+    public boolean isFemale() {
+        return isFemale;
+    }
+
+    public void setFemale(boolean female) {
+        this.isFemale = female;
+    }
+
+    public List<Event> getUserEvents() {
+        return userEvents;
+    }
+
+    public void logout(){
+        this.people.clear();
+        this.events.clear();
+        this.childrenById.clear();
+        this.eventsFromPeople.clear();
+        this.relationships.clear();
+        this.maleEvents.clear();
+        this.femaleEvents.clear();
+        this.userPeople.clear();
+        this.userEvents.clear();
+        this.user = null;
+        this.selectPerson = null;
+        this.selectEvent = null;
+        this.isLifeEvent = true;
+        this.isSpouseEvent = true;
+        this.isFamilyEvent = true;
+        this.isMale = true;
+        this.isFemale = true;
+    }
+
 }

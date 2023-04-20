@@ -1,4 +1,4 @@
-package Activities;
+package com.example.family_map_client;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
